@@ -1,8 +1,8 @@
 import { GitHub } from '@actions/github/lib/utils';
 import { Config, isTag, releaseBody } from './util';
-import { statSync, createReadStream } from 'fs';
+import { statSync, createReadStream } from 'node:fs';
 import { getType } from 'mime';
-import { basename } from 'path';
+import { basename } from 'node:path';
 
 type GitHub = InstanceType<typeof GitHub>;
 
@@ -13,6 +13,20 @@ export interface ReleaseAsset {
   data: NodeJS.ReadableStream;
 }
 
+/**
+* Interface representing a release
+* @interface Release
+* @property {number} id - The ID of the release
+* @property {string} upload_url - The URL for uploading assets to the release
+* @property {string} html_url - The URL of the release page on GitHub
+* @property {string} tag_name - The tag name associated with the release
+* @property {string | null} name - The name of the release
+* @property {string | null | undefined} body - The body text of the release
+* @property {string} target_commitish - The target commitish (branch or commit SHA) of the release
+* @property {boolean} draft - Indicates if the release is a draft
+* @property {boolean} prerelease - Indicates if the release is a prerelease
+* @property {Array<{ id: number; name: string }>} assets - An array of assets associated with the release
+*/
 export interface Release {
   id: number;
   upload_url: string;
@@ -26,9 +40,36 @@ export interface Release {
   assets: Array<{ id: number; name: string }>;
 }
 
+/**
+* Interface for a releaser
+* @interface Releaser
+*/
 export interface Releaser {
+  /**
+* Get a release by tag name
+* @param {Object} params - The parameters for getting the release
+* @param {string} params.owner - The owner of the repository
+* @param {string} params.repo - The name of the repository
+* @param {string} params.tag - The tag name of the release
+* @returns {Promise<{ data: Release }>} A promise that resolves to the release data
+*/
   getReleaseByTag(params: { owner: string; repo: string; tag: string }): Promise<{ data: Release }>;
-
+/**
+* Create a new release
+* @param {Object} params - The parameters for creating the release
+* @param {string} params.owner - The owner of the repository
+* @param {string} params.repo - The name of the repository
+* @param {string} params.tag_name - The tag name for the release
+* @param {string} params.name - The name of the release
+* @param {string} [params.body] - The body text of the release
+* @param {boolean} [params.draft] - Indicates if the release should be a draft
+* @param {boolean} [params.prerelease] - Indicates if the release should be a prerelease
+* @param {string} [params.target_commitish] - The target commitish (branch or commit SHA) for the release
+* @param {string} [params.discussion_category_name] - The name of the discussion category for the release
+* @param {boolean} [params.generate_release_notes] - Indicates if release notes should be automatically generated
+* @param {string} [params.make_latest] - Specifies the value for the "latest" release
+* @returns {Promise<{ data: Release }>} A promise that resolves to the created release data
+*/
   createRelease(params: {
     owner: string;
     repo: string;
