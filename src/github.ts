@@ -1,6 +1,6 @@
 import { GitHub } from "@actions/github/lib/utils";
 import { Config, isTag, releaseBody } from "./util";
-import { statSync, readFileSync } from "fs";
+import { statSync, createReadStream } from "fs";
 import { getType } from "mime";
 import { basename } from "path";
 
@@ -10,7 +10,7 @@ export interface ReleaseAsset {
   name: string;
   mime: string;
   size: number;
-  data: Buffer;
+  data: NodeJS.ReadableStream;
 }
 
 export interface Release {
@@ -82,38 +82,29 @@ export class GitHubReleaser implements Releaser {
     return this.github.rest.repos.getReleaseByTag(params);
   }
 
-  createRelease(params: {
-    owner: string;
-    repo: string;
-    tag_name: string;
-    name: string;
-    body: string | undefined;
-    draft: boolean | undefined;
-    prerelease: boolean | undefined;
-    target_commitish: string | undefined;
-    discussion_category_name: string | undefined;
-    generate_release_notes: boolean | undefined;
-    make_latest: string | undefined;
-  }): Promise<{ data: Release }> {
-    return this.github.rest.repos.createRelease(params);
-  }
+createRelease(params: {
+owner: string;
+repo: string;
+tag_name: string;
+name: string;
+body: string | undefined;
+draft: boolean | undefined;
+prerelease: boolean | undefined;
+target_commitish: string | undefined;
+discussion_category_name: string | undefined;
+generate_release_notes: boolean | undefined;
+make_latest: "true" | "false" | "legacy" | undefined;
+}): Promise<{ data: Release }> {
+return this.github.rest.repos.createRelease(params);
+}
 
-  updateRelease(params: {
-    owner: string;
-    repo: string;
-    release_id: number;
-    tag_name: string;
-    target_commitish: string;
-    name: string;
-    body: string | undefined;
-    draft: boolean | undefined;
-    prerelease: boolean | undefined;
-    discussion_category_name: string | undefined;
-    generate_release_notes: boolean | undefined;
-    make_latest: string | undefined;
-  }): Promise<{ data: Release }> {
-    return this.github.rest.repos.updateRelease(params);
-  }
+updateRelease(params: {
+  owner: string;
+  repo: string;
+  release_id: number;
+}): Promise<{ data: Release }> {
+  return this.github.rest.repos.updateRelease(params);
+}
 
   allReleases(params: {
     owner: string;
@@ -131,7 +122,7 @@ export const asset = (path: string): ReleaseAsset => {
     name: basename(path),
     mime: mimeOrDefault(path),
     size: statSync(path).size,
-    data: readFileSync(path),
+    data: createReadStream(path),
   };
 };
 
@@ -147,7 +138,7 @@ export const upload = async (
   currentAssets: Array<{ id: number; name: string }>
 ): Promise<any> => {
   const [owner, repo] = config.github_repository.split("/");
-  const { name, size, mime, data: body } = asset(path);
+  const { name, size, mime, data } = asset(path);
   const currentAsset = currentAssets.find(
     ({ name: currentName }) => currentName == name
   );
@@ -170,7 +161,7 @@ export const upload = async (
       "content-type": mime,
       authorization: `token ${config.github_token}`,
     },
-    data: body,
+    data: data,
   });
   const json = resp.data;
   if (resp.status !== 201) {

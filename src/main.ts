@@ -10,7 +10,7 @@ import { getOctokit } from "@actions/github";
 import { setFailed, setOutput } from "@actions/core";
 import { GitHub, getOctokitOptions } from "@actions/github/lib/utils";
 
-import { env } from "process";
+import { env } from "node:process";
 
 async function run() {
   try {
@@ -36,13 +36,7 @@ async function run() {
       }
     }
 
-    // const oktokit = GitHub.plugin(
-    //   require("@octokit/plugin-throttling"),
-    //   require("@octokit/plugin-retry")
-    // );
-
     const gh = getOctokit(config.github_token, {
-      //new oktokit(
       throttle: {
         onRateLimit: (retryAfter, options) => {
           console.warn(
@@ -62,7 +56,7 @@ async function run() {
         },
       },
     });
-    //);
+
     const rel = await release(config, new GitHubReleaser(gh));
     if (config.input_files && config.input_files.length > 0) {
       const files = paths(config.input_files);
