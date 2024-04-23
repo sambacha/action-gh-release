@@ -2,6 +2,7 @@ import { GitHub } from '@actions/github/lib/utils';
 import { Config, isTag, releaseBody } from './util';
 import { statSync, createReadStream } from 'node:fs';
 import { getType } from 'mime';
+
 import { basename } from 'node:path';
 
 type GitHub = InstanceType<typeof GitHub>;
